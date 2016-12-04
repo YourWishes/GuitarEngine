@@ -17,6 +17,7 @@ package com.domsplace.engine.scene;
 
 import com.domsplace.engine.gui.GUI;
 import com.domsplace.engine.display.DisplayManager;
+import com.domsplace.engine.disposable.IDisposable;
 import com.domsplace.engine.game.Game;
 import com.domsplace.engine.gui.Scanlines;
 import java.util.ArrayList;
@@ -28,9 +29,12 @@ import static org.lwjgl.opengl.GL11.*;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public class GameScene {
+public class GameScene implements IDisposable {
     public static GameScene ACTIVE_SCENE = null;
-    public static GameScene getActiveScene() {return ACTIVE_SCENE;}
+    public static GameScene getActiveScene() {
+        if(ACTIVE_SCENE.isDisposed()) return ACTIVE_SCENE = null;
+        return ACTIVE_SCENE;
+    }
     public static void setActiveScene(GameScene scene) {
         if(ACTIVE_SCENE instanceof GameScene) {
             for(GameObject go : ACTIVE_SCENE.getGameObjects()) {
@@ -41,12 +45,13 @@ public class GameScene {
     }
     
     //Instance
-    public float x;
-    public float y;
     private final Game game;
     private final GUI gui;
-    
     private final List<GameObject> objects;
+    public float x;
+    public float y;
+    private boolean disposed = false;
+    
     public long last_frame = -1;
 
     public GameScene(Game game) {
@@ -61,6 +66,8 @@ public class GameScene {
     public int getHeight() {return DisplayManager.getInstance().getWindow().getHeight();}
     public final GUI getGUI() {return this.gui;}
     public final Game getGame() {return this.game;}
+    
+    @Override public final boolean isDisposed() {return this.disposed;}
 
     public void addGameObject(GameObject object) {
         this.objects.add(object);
@@ -110,5 +117,14 @@ public class GameScene {
         glPushMatrix();
         this.getGUI().render(this, diff);
         glPopMatrix();
+    }
+    
+    @Override
+    public void dispose() {
+        for(GameObject go : this.getGameObjects()) {
+            go.dispose();
+        }
+        
+        this.disposed = true;
     }
 }

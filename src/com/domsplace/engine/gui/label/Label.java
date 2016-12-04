@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.domsplace.engine.gui;
+package com.domsplace.engine.gui.label;
 
-import com.domsplace.engine.display.texture.FontTexture;
-import com.domsplace.engine.game.GameText;
+import com.domsplace.engine.gui.GUI;
+import com.domsplace.engine.gui.GUIObject;
+import com.domsplace.engine.text.FontTexture;
+import com.domsplace.engine.text.GameText;
 import com.domsplace.engine.scene.GameScene;
 import java.awt.Color;
 
@@ -42,7 +44,9 @@ public class Label extends GUIObject {
 
     @Override
     public int getWidth() {
-        return (int)this.text_object.width;
+        //return (int)this.text_object.width;
+        if(!(getFont() instanceof FontTexture)) return 0;
+        return (int)getFont().getWidth(getText());
     }
 
     @Override
@@ -54,10 +58,16 @@ public class Label extends GUIObject {
         return this.text_object.getText();
     }
     
+    public FontTexture getFont() {
+        if(!(this.text_object.getFont() instanceof FontTexture)) return null;
+        return (FontTexture)this.text_object.getFont();
+    }
+    
     public Color getColor() {return this.text_object.color;}
     
-    public void setText(String text) {
+    public String setText(String text) {
         this.text_object.setText(text);
+        return "";//Needs to return string because of overridden classes.
     }
     
     public void setFont(FontTexture text) {

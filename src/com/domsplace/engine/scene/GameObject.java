@@ -18,6 +18,7 @@ package com.domsplace.engine.scene;
 import com.domsplace.engine.display.shader.ShaderProgram;
 import com.domsplace.engine.display.texture.GameTexture;
 import com.domsplace.engine.display.texture.Texture;
+import com.domsplace.engine.disposable.IDisposable;
 import com.domsplace.engine.utilities.ColorUtilities;
 import java.awt.Color;
 import static org.lwjgl.opengl.GL11.*;
@@ -26,13 +27,14 @@ import static org.lwjgl.opengl.GL11.*;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public class GameObject {
+public class GameObject implements IDisposable {
 
     public static final double TRIANGLE_WIDTH = 1.0;
     public static final double TRIANGLE_HEIGHT = 1.0;
 
     //Instance
     private final GameScene scene;
+    private boolean disposed = false;
 
     public double x;
     public double y;
@@ -56,29 +58,15 @@ public class GameObject {
         this.scene = scene;
     }
 
-    public GameScene getScene() {
-        return this.scene;
-    }
+    public final GameScene getScene() {return this.scene;}
+    public final Texture getTexture() {return this.texture;}
+    public double getX() {return this.x;}
+    public double getY() {return this.y;}
+    
+    @Override public final boolean isDisposed() {return this.disposed;}
 
-    public final Texture getTexture() {
-        return this.texture;
-    }
-
-    public double getX() {
-        return this.x;
-    }
-
-    public double getY() {
-        return this.y;
-    }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
+    public void setX(double x) {this.x = x;}
+    public void setY(double y) {this.y = y;}
     
     public void resizeToTexture() {
         if(getTexture() instanceof GameTexture) {
@@ -169,11 +157,14 @@ public class GameObject {
         glEnd();
 
     }
-
-    public void onSceneChange(GameScene newsc) {
+    
+    @Override
+    public void dispose() {
+        this.disposed = true;
+        this.getScene().removeGameObject(this);
     }
 
-    public void tick() {
-
-    }
+    //Events
+    public void onSceneChange(GameScene newsc) {}
+    public void tick() {}
 }

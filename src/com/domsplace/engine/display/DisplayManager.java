@@ -44,15 +44,20 @@ public final class DisplayManager {
     private Logger logger;
     private GLFWErrorCallback errorCallback;
     private GLFWWindow window;
+    private Thread knownMainThread;//Not guaranteed to be set but eh reliable enough.
+    //If this isn't set then the game is probably too bugged to run so a crash is better tbh.
     
     private DisplayManager() {this.logger = Logger.getLogger(this.getClass().getName());}
     
     public GLFWWindow getWindow() {return this.window;}
     public Logger getLogger() {return this.logger;}
+    public Thread getKnownMainThread() {return this.knownMainThread;}
     
     public void setup(Game game) throws Exception {
         if(!Thread.currentThread().equals(game.getMainThread())) throw new Exception("This is not the main thread, cannot setup.");
         if(errorCallback instanceof GLFWErrorCallback) throw new Exception("LWJGL already setup/failed.");
+        
+        this.knownMainThread = game.getMainThread();
         
         //Attaches the logger to the game logger.
         this.logger.setParent(game.getLogger());
@@ -103,10 +108,11 @@ public final class DisplayManager {
         
         while(!window.isCloseRequested()) {
             try {
-                //Do the render
-                this.update(game);
                 //We need to update our KeyManager as well.
                 KeyManager.getInstance().update();
+                
+                //Do the render
+                this.update(game);
             } catch(Exception e) {
                 logger.log(Level.SEVERE, "Failed to render!", e);
             }
@@ -115,6 +121,8 @@ public final class DisplayManager {
     }
     
     public void update(Game game) throws Exception {
+        this.window.update();
+        
         //Clear the bufferz
         glViewport(0, 0, window.getWidth(), window.getHeight());//Changes our viewport to be the size of the window.
         glClear(GL_COLOR_BUFFER_BIT);

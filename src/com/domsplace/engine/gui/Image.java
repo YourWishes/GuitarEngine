@@ -48,4 +48,10 @@ public class Image extends GUIObject {
         this.go.render();
         super.render(scene, frame_took);
     }
+    
+    @Override
+    public void dispose() {
+        super.dispose();
+        go.dispose();
+    }
 }

@@ -74,6 +74,8 @@ public class Texture implements Runnable {
     public int getWidth() {return this.tWidth;}
     public int getHeight() {return this.tHeight;}
     public int getHandle() {return this.handle;}
+    
+    public boolean isUploaded() {return this.handle != -1;}
 
     public void genHandle() {
         this.handle = Texture.generateTextureHandle();

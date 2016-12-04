@@ -111,4 +111,13 @@ public class GUIBorder extends GUIObject {
         MIDDLE_LEFT.y = CENTER.y = MIDDLE_RIGHT.y = individual_height;
         BOTTOM_LEFT.y = BOTTOM_MIDDLE.y = BOTTOM_RIGHT.y = MIDDLE_LEFT.height + MIDDLE_LEFT.y;
     }
+    
+    @Override
+    public void dispose() {
+        super.dispose();
+        for(GameObject go : this.BORDER_OBJECTS) {
+            go.dispose();
+        }
+        BORDER_OBJECTS.clear();
+    }
 }

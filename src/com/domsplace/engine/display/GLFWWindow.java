@@ -9,24 +9,13 @@ package com.domsplace.engine.display;
 
 import static com.domsplace.engine.display.DisplayManager.WINDOW_HEIGHT;
 import static com.domsplace.engine.display.DisplayManager.WINDOW_WIDTH;
-import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
-import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
-import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
-import static org.lwjgl.glfw.GLFW.GLFW_VISIBLE;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
-import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
-import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
-import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
-import static org.lwjgl.glfw.GLFW.glfwGetWindowMonitor;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
-import static org.lwjgl.glfw.GLFW.glfwShowWindow;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
-import static org.lwjgl.glfw.GLFW.glfwWindowHint;
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
+import com.domsplace.engine.input.KeyManager;
+import java.nio.DoubleBuffer;
+import org.lwjgl.BufferUtils;
+import static org.lwjgl.glfw.GLFW.*;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
+import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -35,10 +24,18 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * 
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public final class GLFWWindow extends GLFWFramebufferSizeCallback {
+public final class GLFWWindow {
     private int width;
     private int height;
     private final long window_handle;
+    
+    private double mx;
+    private double my;
+    
+    //GLFW Callbacks
+    private final GLFWErrorCallback errorCallback;
+    private final GLFWKeyCallback keyCallback;
+    private final GLFWFramebufferSizeCallback framebufferSizeCallback;
     
     public GLFWWindow(int width, int height, String title) throws Exception {
         this(width,height,title,false);
@@ -52,6 +49,8 @@ public final class GLFWWindow extends GLFWFramebufferSizeCallback {
         this.width = width;
         this.height = height;
         
+        glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
+        
         glfwDefaultWindowHints();                   // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);   // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);  // the window will be resizable
@@ -59,13 +58,29 @@ public final class GLFWWindow extends GLFWFramebufferSizeCallback {
         if (window_handle == NULL) {
             throw new Exception("Failed to create the GLFW window");
         }
-        glfwSetFramebufferSizeCallback(window_handle, this);
+        
+        //Setup Events
+        glfwSetKeyCallback(window_handle, keyCallback = new GLFWKeyCallback() {
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                onKey(window,key,scancode,action,mods);
+            }
+        });
+        
+        glfwSetFramebufferSizeCallback(window_handle, (framebufferSizeCallback = new GLFWFramebufferSizeCallback() {
+            @Override
+            public void invoke(long window, int width, int height) {
+                onResize(window, width, height);
+            }
+        }));
     }
     
     public long getWindowHandle() {return window_handle;}
     public long getMonitor() {return glfwGetWindowMonitor(this.window_handle);}
     public int getWidth() {return width;}
     public int getHeight() {return height;}
+    public double getMouseX() {return this.mx;}
+    public double getMouseY() {return this.my;}
     
     public void setPosition(int x, int y) {glfwSetWindowPos(this.window_handle,x,y);}
     public void setContextCurrent() {glfwMakeContextCurrent(window_handle);}//Basically "RENDER TO ME!"
@@ -86,17 +101,29 @@ public final class GLFWWindow extends GLFWFramebufferSizeCallback {
         glfwShowWindow(window_handle);
     }
     
+    //Handle Update stuff (mostly event listeners)
+    public void update() {
+        DoubleBuffer x = BufferUtils.createDoubleBuffer(1);
+        DoubleBuffer y = BufferUtils.createDoubleBuffer(1);
+        glfwGetCursorPos(window_handle, x, y);
+        x.rewind();
+        y.rewind();
+
+        mx = x.get();
+        my = y.get();
+    }
+    
     public void dispose() {
         glfwDestroyWindow(window_handle);
     }
     
-    @Override
-    public void invoke(long window, int width, int height) {
-        onResize(window, width, height);
-    }
-    
+    //Events
     public void onResize(long window, int width, int height) {
         this.width = width;
         this.height = height;
+    }
+    
+    public void onKey(long window, int key, int scancode, int action, int mods) {
+        KeyManager.getInstance().handleKey(key, action);
     }
 }

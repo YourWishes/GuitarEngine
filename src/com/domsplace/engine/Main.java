@@ -10,6 +10,7 @@ package com.domsplace.engine;
 import com.domsplace.engine.display.DisplayManager;
 import com.domsplace.engine.game.Game;
 import com.domsplace.engine.game.GameInfo;
+import com.domsplace.engine.scene.GameScene;
 import com.domsplace.engine.sound.SoundFactory;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -96,6 +97,8 @@ public class Main {
         
         //Cleanup time
         try {
+            GameScene.getActiveScene().dispose();
+            
             SoundFactory.getFactory().stop();
             DisplayManager.getInstance().dispose(game);
         } catch(Exception e) {

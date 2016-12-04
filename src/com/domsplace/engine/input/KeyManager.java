@@ -43,6 +43,7 @@ public final class KeyManager {
     private KeyManager() {
         this.addBinding(BINDING_EXAMPLE, GLFW.GLFW_KEY_BACKSPACE);
         this.addBinding(BINDING_ACCEPT, GLFW.GLFW_KEY_SPACE);
+        this.addBinding(BINDING_ACCEPT, GLFW.GLFW_KEY_E);
     }
     
     public List<Integer> getBindings(int BINDING) {

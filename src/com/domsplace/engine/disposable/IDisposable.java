@@ -5,14 +5,14 @@
  * 
  * Written by Dominic Masters <dominic@domsplace.com>, November 2016
  */
-package com.domsplace.engine.gui;
+package com.domsplace.engine.disposable;
 
 /**
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public class LabelWrap extends Label {
-    public LabelWrap(GUI gui) {
-        super(gui);
-    }
+public interface IDisposable {
+    boolean isDisposed();
+    
+    void dispose();
 }

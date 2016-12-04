@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.domsplace.engine.game;
+package com.domsplace.engine.text;
 
-import com.domsplace.engine.display.texture.FontTexture;
 import com.domsplace.engine.scene.GameObject;
 import com.domsplace.engine.scene.GameScene;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.logging.Level;
+import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.stb.STBTTAlignedQuad;
+import org.lwjgl.stb.STBTTFontinfo;
 import static org.lwjgl.stb.STBTruetype.*;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -46,6 +49,7 @@ public class GameText extends GameObject {
     @Override
     public void renderMesh() {
         if(!(getFont() instanceof FontTexture)) return;
+        
         try (MemoryStack stack = stackPush()) {
             this.width = 0;
             this.height = getFont().getFontSize();

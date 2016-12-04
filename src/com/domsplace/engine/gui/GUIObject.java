@@ -15,8 +15,10 @@
  */
 package com.domsplace.engine.gui;
 
+import com.domsplace.engine.disposable.IDisposable;
 import com.domsplace.engine.scene.GameScene;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import static org.lwjgl.opengl.GL11.glPopMatrix;
 import static org.lwjgl.opengl.GL11.glPushMatrix;
@@ -26,16 +28,22 @@ import static org.lwjgl.opengl.GL11.glTranslated;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public abstract class GUIObject {
+public abstract class GUIObject implements IDisposable {
     private final List<GUIObject> children;
     private GUIObject parent;
     private final GUI gui;
     
+    private boolean disposed = false;
+    
     public double x;
     public double y;
+    public int zIndex;
     
     public GUIObject(GUI gui) {
         this.children = new ArrayList<GUIObject>();
+        if(gui instanceof GUI && gui.getChildren() != null) {
+            this.zIndex = gui.getChildren().size();
+        }
         
         if(this instanceof GUI) {
             this.gui = (GUI)this;
@@ -49,6 +57,8 @@ public abstract class GUIObject {
     public final List<GUIObject> getChildren() {return new ArrayList<GUIObject>(this.children);}
     public abstract int getWidth();
     public abstract int getHeight();
+    
+    @Override public final boolean isDisposed() {return this.disposed;}
     
     public final GUIObject add(GUIObject object) {
         this.children.add(object);
@@ -66,11 +76,34 @@ public abstract class GUIObject {
     }
     
     public void render(GameScene scene, double frame_took) {
-        for(GUIObject go : this.getChildren()) {
+        List<GUIObject> objs = this.getChildren();
+        objs.sort(new Comparator<GUIObject>(){
+            @Override
+            public int compare(GUIObject t, GUIObject t1) {
+                return t.compare(t1);
+            }
+        });
+        for(GUIObject go : objs) {
             glPushMatrix();
             glTranslated(go.x, go.y, 0d);
             go.render(scene, frame_took);
             glPopMatrix();
+        }
+    }
+    
+    public int compare(GUIObject o) {
+        return this.zIndex > o.zIndex ? +1 : this.zIndex < o.zIndex ? -1 : 0;
+    }
+    
+    @Override
+    public void dispose() {
+        this.disposed = true;
+        this.getGUI().remove(this);
+        if(this.parent instanceof GUIObject) {
+            this.parent.remove(this);
+        }
+        for(GUIObject go : this.getChildren()) {
+            go.remove(this);
         }
     }
 }
