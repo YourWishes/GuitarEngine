@@ -16,6 +16,8 @@
 package com.domsplace.engine.display.texture;
 
 import com.domsplace.engine.display.DisplayManager;
+import com.domsplace.engine.disposable.IDisposable;
+import com.domsplace.engine.utilities.TimeUtilities;
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 import java.io.IOException;
@@ -24,6 +26,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
+import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT;
+import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -33,7 +38,7 @@ import static org.lwjgl.opengl.GL30.glGenerateMipmap;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public class Texture implements Runnable {
+public class Texture implements Runnable, IDisposable {
     private static Texture BOUND_TEXTURE = null;
     
     private static final List<Texture> TEXTURES_TO_UPLOAD = new ArrayList<Texture>();
@@ -57,11 +62,16 @@ public class Texture implements Runnable {
     protected int tWidth;
     protected int tHeight;
     protected ByteBuffer buff;
+    private boolean disposed = false;
     
     protected int textureType = GL_RGBA;
-    protected int textureFilter = GL_NEAREST;
+    protected int textureFilter = GL_LINEAR_MIPMAP_LINEAR ;
     
     public boolean smooth = true;
+    
+    //Threading rules
+    private boolean reqLoadLater = false;
+    private boolean reqUploadLater = false;
 
     public Texture(InputStream is) {
         this.is = is;
@@ -76,6 +86,8 @@ public class Texture implements Runnable {
     public int getHandle() {return this.handle;}
     
     public boolean isUploaded() {return this.handle != -1;}
+    @Override public boolean isDisposed() { return disposed; }
+    public boolean isBound() {return this.equals(BOUND_TEXTURE);}
 
     public void genHandle() {
         this.handle = Texture.generateTextureHandle();
@@ -97,7 +109,21 @@ public class Texture implements Runnable {
         this.loading = false;
     }
     
+    public Thread uploadLater() {
+        return genThread(false,true);
+    }
+    
     public Thread loadLater() {
+        return genThread(true,false);
+    }
+    
+    public Thread loadAndUploadLater() {
+        return genThread(true,true);
+    }
+    
+    private Thread genThread(boolean loadLater, boolean uploadLater) {
+        this.reqLoadLater = loadLater;
+        this.reqUploadLater = uploadLater;
         Thread thread = new Thread(this);
         thread.start();
         return thread;
@@ -106,14 +132,14 @@ public class Texture implements Runnable {
     @Override
     public void run() {
         try {
-            this.load();
-            this.upload();
+            if(reqLoadLater) this.load();
+            if(reqUploadLater) this.upload();
         } catch (Exception ex) {
             DisplayManager.getInstance().getLogger().log(Level.SEVERE, "Faield to load Texture!", ex);
         }
     }
     
-    public void uploadMainThread() throws IOException {
+    private void uploadMainThread() throws IOException {
         Texture.TEXTURES_TO_UPLOAD.remove(this);
         this.genHandle();
         //Put Texture on GFX card
@@ -123,20 +149,28 @@ public class Texture implements Runnable {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    public void upload() {
-        if(Texture.TEXTURES_TO_UPLOAD.contains(this)) return;
-        if(this.handle != -1) return;
-        Texture.TEXTURES_TO_UPLOAD.add(this);
+    public void upload() throws IOException {
+        if(Thread.currentThread().equals(DisplayManager.getInstance().getKnownMainThread())) {
+            this.uploadMainThread();
+        } else {
+            if(Texture.TEXTURES_TO_UPLOAD.contains(this)) return;
+            if(this.handle != -1) return;
+            Texture.TEXTURES_TO_UPLOAD.add(this);
+            while(!this.isUploaded()) {TimeUtilities.sleepThread(1);}
+        }
     }
 
     public void bind() {
         if(this.equals(BOUND_TEXTURE)) return;
         if(this.handle == -1) return;
         
+        float f = glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);//Texture filtering
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureFilter);
+        if(f > 0) glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, f);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -144,5 +178,24 @@ public class Texture implements Runnable {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, this.handle);
         BOUND_TEXTURE = this;
+    }
+
+    @Override
+    public void dispose() {
+        disposed=true;
+        TEXTURES_TO_UPLOAD.remove(this);
+        
+        if(this.isUploaded()) {
+            if(this.isBound()) {
+                Texture.unbind();
+            }
+            
+            //Delete the texture
+            glDeleteTextures(this.handle);
+            this.handle = -1;
+        }
+        
+        try {this.buff.clear(); }catch(Exception e) {}
+        try { this.is.close(); } catch(Exception e) { }
     }
 }

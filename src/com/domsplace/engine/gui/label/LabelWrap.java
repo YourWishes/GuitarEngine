@@ -53,7 +53,7 @@ public class LabelWrap extends Label {
     @Override public int getWidth() {return maxWidth;}
     @Override public int getHeight() {
         if(maxLines > 0) {
-            return maxLines * getFont().getFontSize();
+            return maxLines * getFont().getHeight();
         } else {
             //We have to calculate height?! what is this.
             String[] lines = this.finalText.split("\n");
@@ -93,7 +93,7 @@ public class LabelWrap extends Label {
                 String word = words[w];//Word.
                 
                 String expectedLine = currentLine + word;
-                float expectedWidth = getFont().getWidth(expectedLine);
+                float expectedWidth = getFont().getWidth(expectedLine)*this.getInternalObject().getFontScale();
                 
                 //Check the expected width...
                 if(expectedWidth > maxWidth) {
@@ -154,7 +154,7 @@ public class LabelWrap extends Label {
         if ((now - last_render) > speed) {
             int c = 1;
             if(this.faster_scroll) c = 3;
-            while(c > 0 && this.char_index < this.getText().length()) {
+            while(c > 0 && this.char_index <= this.getText().length()) {
                 this.printChar();
                 c--;
             }
@@ -174,10 +174,9 @@ public class LabelWrap extends Label {
         this.setCurrentText(s);
         char_index ++;
         last_render = System.nanoTime();
+        this.onCharacter(last_char);
         if (this.char_index >= this.finalText.length()) {
             this.onFinish();
-        } else {
-            this.onCharacter(last_char);
         }
     }
     

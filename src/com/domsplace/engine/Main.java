@@ -97,7 +97,7 @@ public class Main {
         
         //Cleanup time
         try {
-            GameScene.getActiveScene().dispose();
+            if(GameScene.getActiveScene() instanceof GameScene) GameScene.getActiveScene().dispose();
             
             SoundFactory.getFactory().stop();
             DisplayManager.getInstance().dispose(game);

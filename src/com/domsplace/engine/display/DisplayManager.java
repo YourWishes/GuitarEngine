@@ -10,16 +10,23 @@ package com.domsplace.engine.display;
 import com.domsplace.engine.display.shader.ShaderProgram;
 import com.domsplace.engine.display.texture.Texture;
 import com.domsplace.engine.game.Game;
+import com.domsplace.engine.game.GameInfo;
 import com.domsplace.engine.input.KeyManager;
 import com.domsplace.engine.scene.GameScene;
+import com.domsplace.engine.utilities.ColorUtilities;
+import java.awt.Color;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.*;
+import static org.lwjgl.opengl.EXTFramebufferObject.*;
+import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
+import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT;
 import org.lwjgl.opengl.GL;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL13.*;
+import org.lwjgl.opengl.GL14;
 
 /**
  * DisplayManager handles the main graphics processing, and is what loops the 
@@ -47,11 +54,23 @@ public final class DisplayManager {
     private Thread knownMainThread;//Not guaranteed to be set but eh reliable enough.
     //If this isn't set then the game is probably too bugged to run so a crash is better tbh.
     
-    private DisplayManager() {this.logger = Logger.getLogger(this.getClass().getName());}
+    private int width;
+    private int height;
+    
+    private int sceneBufferFBID;//FrameBuffer ID
+    private int sceneBufferCRID;//ColorBuffer ID
+    private int sceneBufferDPID;//DepthBuffer ID
+    
+    private DisplayManager() {
+        this.logger = Logger.getLogger(this.getClass().getName());
+    }
     
     public GLFWWindow getWindow() {return this.window;}
     public Logger getLogger() {return this.logger;}
     public Thread getKnownMainThread() {return this.knownMainThread;}
+    
+    public int getWidth() {return this.width;}
+    public int getHeight() {return this.height;}
     
     public void setup(Game game) throws Exception {
         if(!Thread.currentThread().equals(game.getMainThread())) throw new Exception("This is not the main thread, cannot setup.");
@@ -79,6 +98,16 @@ public final class DisplayManager {
             throw new Exception("Unable to initialize GLFW");
         }
         
+        //Setup internal frame buffer
+        try {
+            width = Integer.parseInt(GameInfo.getGameInfo().getValue("width"));
+            height = Integer.parseInt(GameInfo.getGameInfo().getValue("height"));
+        } catch(Exception e) {
+            //Cannot get internal buffer value?
+            width = WINDOW_WIDTH;
+            height = WINDOW_HEIGHT;
+        }
+        
         // Create the game window
         this.window = new GLFWWindow(WINDOW_WIDTH, WINDOW_HEIGHT, game.getName());
         this.window.setContextCurrent();
@@ -93,7 +122,28 @@ public final class DisplayManager {
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         
         //We need to load our default Shader here.
-        ShaderProgram.getDefaultShader();//Basically loads it.
+        ShaderProgram.getDefaultShader().bind();//Basically loads it.
+        
+        //Now we need the buffer that we're going to render the scene to.
+        this.sceneBufferCRID = glGenTextures();
+        this.sceneBufferDPID = glGenRenderbuffersEXT();
+        this.sceneBufferFBID = glGenFramebuffersEXT();
+        
+        //Initialize the buffers
+        float f = glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);//Texture filtering
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this.sceneBufferFBID);
+        glBindTexture(GL_TEXTURE_2D, this.sceneBufferCRID);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        if(f > 0) glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, f);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,height, 0,GL_RGB, GL_INT, (ByteBuffer)null);//Use RGBA if you want THIS TEXTURE to have alpha channels stored.
+        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D, sceneBufferCRID, 0);
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, sceneBufferDPID);
+        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL14.GL_DEPTH_COMPONENT24, width, height);
+        glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, sceneBufferDPID);
+
+        //Reset to main frame buffer
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     }
     
     public void start(Game game) throws Exception {
@@ -102,6 +152,11 @@ public final class DisplayManager {
         //DisplayManager was requested to start.
         window.show();
         window.setPosition(64, 64);
+        
+        //Vsync?
+        boolean vsync = false;
+        if(GameInfo.getGameInfo().isValueSet("vsync")) vsync = GameInfo.getGameInfo().getValue("vsync").equalsIgnoreCase("true");
+        if(vsync) glfwSwapInterval(1);
         
         //Can't remember what this does, but it's important!... probably
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);//Set our default clear color.
@@ -117,34 +172,75 @@ public final class DisplayManager {
                 logger.log(Level.SEVERE, "Failed to render!", e);
             }
         }
+        if(GameScene.getActiveScene() instanceof GameScene) GameScene.getActiveScene().dispose();
         logger.log(Level.INFO, "Window was requested to close.");
     }
     
     public void update(Game game) throws Exception {
         this.window.update();
-        
-        //Clear the bufferz
-        glViewport(0, 0, window.getWidth(), window.getHeight());//Changes our viewport to be the size of the window.
-        glClear(GL_COLOR_BUFFER_BIT);
+        GameScene scene = GameScene.getActiveScene();
+        Color c = Color.white;
+        if(scene instanceof GameScene) {
+            c = scene.getBackgroundColor();
+        }
         
         //Upload all pending textures.
         for(Texture t : Texture.getTexturesToUpload()) {
             if(t == null) continue;
-            t.uploadMainThread();
+            t.upload();
         }
+        Texture.unbind();
         
-        //Now change our games rendering space
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0, window.getWidth(), window.getHeight(), 0, -1.0, 10.0);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+        //Bind the Scene's FBO
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this.sceneBufferFBID);
         
-        //Rendering time baby
-        GameScene.getActiveScene().render();
+        //Now render the scene to the FBO
+        glPushMatrix();
+        glPushAttrib(GL_VIEWPORT_BIT);
+        this.setupMatrices(width, height, c);
+        if(scene instanceof GameScene) {
+            GameScene.getActiveScene().render();
+        }
+        glPopAttrib();
+        glPopMatrix();
         
         //Unbind our texture (A bit of cleanup)
         Texture.unbind();
+        //Dunno why, the ShaderProgram was causing some issues
+        ShaderProgram.unbindProgram();
+        
+        //Bind the FBO
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        glBindTexture(GL_TEXTURE_2D, this.sceneBufferCRID);
+        
+        //Now render the scenes fbo to a quad
+        glPushMatrix();
+        glPushAttrib(GL_VIEWPORT_BIT);
+        this.setupMatrices(window.getWidth(), window.getHeight(), Color.BLACK);
+        
+        //Fun Part, Here we get to resize our quad
+        float ww = (float)window.getWidth();
+        float wh = (float)window.getHeight();
+        float qw = 0;
+        float qh = 0;
+        float qx = 0;
+        float qy = 0;
+        float ratio = ((float)WINDOW_WIDTH)/((float)WINDOW_HEIGHT);
+        if((ww/wh) > ((float)width/(float)height)) {
+            qw = wh*ratio;
+            qh = wh;
+            qx = (ww/2) - (qw/2);
+            qy = 0;
+        } else {
+            qw = ww;
+            qh = ww/ratio;
+            qx = 0;
+            qy = (wh/2)-(qh/2);
+        }
+        simpleQuad(qx,qy,(int)qw,(int)qh,Color.white);
+        
+        glPopAttrib();
+        glPopMatrix();
         
         //Swap and shuffle
         this.window.swapBuffers();
@@ -160,5 +256,52 @@ public final class DisplayManager {
         errorCallback = null;
         
         glfwTerminate();
+    }
+    
+    public void setupMatrices(int width, int height, Color color) {
+        float[] colors = ColorUtilities.getColorAdjust(color);
+        glViewport(0, 0, width,height);//Changes our viewport to be the size of the window.
+        glClearColor(colors[0],colors[1],colors[2],1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        //Now change our games rendering space
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0,width, height, 0, -1.0, 10.0);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+    }
+    
+    public void simpleQuad(float x, float y, int width, int height, Color color){
+        float[] colors = ColorUtilities.getColorAdjust(color);
+        glColor4f(colors[0],colors[1],colors[2],1);
+        
+        float s = 0;
+        float t = 0;
+        float ss = 1;
+        float ts = 1;
+        
+        glBegin(GL_TRIANGLES);
+        glTexCoord2d(s, ts);
+        glVertex2d(x, y);
+
+        glTexCoord2d(ss, ts);
+        glVertex2d(x+width, y);
+
+        glTexCoord2d(ss, t);
+        glVertex2d(x+width, y+height);
+        glEnd();
+
+        //Second Triangle
+        glBegin(GL_TRIANGLES);
+        glTexCoord2d(s, ts);
+        glVertex2d(x, y);
+
+        glTexCoord2d(ss, t);
+        glVertex2d(x+width, y+height);
+
+        glTexCoord2d(s, t);
+        glVertex2d(x, y+height);
+        glEnd();
     }
 }

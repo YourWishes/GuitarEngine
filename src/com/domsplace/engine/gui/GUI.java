@@ -34,7 +34,7 @@ public class GUI extends GUIFrame {
     public static final GameTexture getGUITexture() {
         if(TEXTURE instanceof GameTexture) return TEXTURE;
         try {
-            TEXTURE = new GameTexture("resource/hud/gui.png", 4, 4);
+            TEXTURE = new GameTexture("resource/hud/gui.png", 3, 3);
             TEXTURE.load();
             TEXTURE.upload();
             return TEXTURE;

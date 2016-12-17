@@ -33,27 +33,37 @@ import static org.lwjgl.opengl.GL20.*;
  * @author Dominic Masters <dominic@domsplace.com>
  */
 public class ShaderProgram {
+    //Predefined Shaders
+    private static HashMap<String,ShaderProgram> PREDEFINED_SHADERS = new HashMap<String,ShaderProgram>();
+    private static ShaderProgram BOUND_SHADER;
+    
+    public static ShaderProgram getPredefinedShader(String resource) {
+        if(PREDEFINED_SHADERS.containsKey(resource)) return PREDEFINED_SHADERS.get(resource);
+        Shader frag = new Shader();
+        Shader vert = new Shader();
+        ShaderProgram shader = new ShaderProgram();
+        try {
+            vert.compile(FileUtilities.getResourceAsString(resource+".vert"), GL20.GL_VERTEX_SHADER);
+            frag.compile(FileUtilities.getResourceAsString(resource+".frag"), GL20.GL_FRAGMENT_SHADER);
+            shader.addShader(frag).addShader(vert);
+            shader.compile();
+        } catch(Exception e) {
+            DisplayManager.getInstance().getLogger().log(Level.SEVERE, "Failed to load default shader", e);
+            return null;
+        }
+        PREDEFINED_SHADERS.put(resource, shader);
+        return shader;
+    }
+    
+    public static ShaderProgram getDefaultShader() {return getPredefinedShader("resource/shader/default");}
+    public static ShaderProgram getOutlineShader() {return getPredefinedShader("resource/shader/outline");}
+    
     public static void unbindProgram() {
+        BOUND_SHADER = null;
         glUseProgram(0);
     }
     
-    //Predefined Shaders
-    private static ShaderProgram defaultShader = null;
-    public static ShaderProgram getDefaultShader() {
-        if(defaultShader != null) return defaultShader;
-        Shader frag = new Shader();
-        Shader vert = new Shader();
-        defaultShader = new ShaderProgram();
-        try {
-            vert.compile(FileUtilities.getResourceAsString("resource/shader/default.vert"), GL20.GL_VERTEX_SHADER);
-            frag.compile(FileUtilities.getResourceAsString("resource/shader/default.frag"), GL20.GL_FRAGMENT_SHADER);
-            defaultShader.addShader(frag).addShader(vert);
-            defaultShader.compile();
-        } catch(Exception e) {
-            DisplayManager.getInstance().getLogger().log(Level.SEVERE, "Failed to load default shader", e);
-        }
-        return defaultShader;
-    }
+    public static ShaderProgram getBoundShader() {return BOUND_SHADER;}
     
     //Instance
     private int program = -1;
@@ -81,6 +91,7 @@ public class ShaderProgram {
     }
     
     public void bind() {
+        BOUND_SHADER = this;
         glUseProgram(this.program);
     }
     

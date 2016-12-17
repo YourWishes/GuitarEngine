@@ -53,6 +53,10 @@ public class GameObject implements IDisposable {
 
     public boolean flipX = false;
     public boolean flipY = false;
+    
+    public boolean outlined = false;
+    public int outlineThickness = 1;
+    public Color outlineColor = Color.WHITE;
 
     public GameObject(final GameScene scene) {
         this.scene = scene;
@@ -90,30 +94,50 @@ public class GameObject implements IDisposable {
     }
 
     //Changes the TextureCoordinates to repeat properly based on the object dimensions
-    public void adjustTextureCoordinatesToDimensions() {
+    public void adjustTextureCoordinatesToDimensions() {this.adjustTextureCoordinatesToDimensions(true, true);}
+    
+    public void adjustTextureCoordinatesToDimensions(boolean doWidth, boolean doHeight) {
         //e.g. if you have a texture that's 16x16 but the object is 32x32, then repeat it 2x2 times
-        this.ss = (double) this.width / (double) this.getTexture().getWidth();
-        this.ts = (double) this.height / (double) this.getTexture().getHeight();
+        if(doWidth) this.ss = (double) this.width / (double) this.getTexture().getWidth();
+        if(doHeight) this.ts = (double) this.height / (double) this.getTexture().getHeight();
+    }
+    
+    private void setTextureToShader() {
+        if (this.texture instanceof Texture) {
+            this.texture.bind();
+            ShaderProgram.getBoundShader().setVariable("isTextured", true);
+        } else {
+            ShaderProgram.getBoundShader().setVariable("isTextured", false);
+        }
     }
 
     public void render() {
         glPushMatrix();
         //glTranslated(Math.round(x), Math.round(y), 0);
         glTranslated(x, y, 0);
-
-        ShaderProgram.getDefaultShader().bind();
-        if (this.texture instanceof Texture) {
-            this.texture.bind();
-            ShaderProgram.getDefaultShader().setVariable("isTextured", true);
-        } else {
-            ShaderProgram.getDefaultShader().setVariable("isTextured", false);
+        
+        //Render Outlines
+        if(this.outlined) {
+            for(int x = -this.outlineThickness; x <= this.outlineThickness; x++) {
+                for(int y = -this.outlineThickness; y <= this.outlineThickness; y++) {
+                    if(x == 0 && y == 0) continue;
+                    glPushMatrix();
+                    glTranslated(this.x + x, this.y + y, 0);
+                    ShaderProgram.getOutlineShader().bind();
+                    this.setTextureToShader();
+                    float[] colors = ColorUtilities.getColorAdjust(this.outlineColor);
+                    glColor4f(colors[0], colors[1], colors[2], alpha);
+                    this.renderMesh();
+                    glPopMatrix();
+                }
+            }
         }
 
+        ShaderProgram.getDefaultShader().bind();
+        this.setTextureToShader();
         float[] colors = ColorUtilities.getColorAdjust(this.color);
         glColor4f(colors[0], colors[1], colors[2], alpha);
-
         this.renderMesh();
-
         glPopMatrix();
     }
 

@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC;
 import static org.lwjgl.openal.ALC10.alcCloseDevice;
@@ -45,13 +46,17 @@ public final class SoundFactory implements Runnable {
     
     //Instance
     private final Thread thread;
+    private final Logger logger;
     private long device = -1;
     private long context;
     private Game game;
     
     private SoundFactory() {
         this.thread = new Thread(this);
+        this.logger = Logger.getLogger(SoundFactory.class.getName());
     }
+    
+    public Logger getLogger() {return logger;}
     
     public boolean isSetup() {
         return this.device != -1 && this.game instanceof Game;
@@ -62,6 +67,7 @@ public final class SoundFactory implements Runnable {
             return;
         }
         this.game = game;
+        this.logger.setParent(game.getLogger());
 
         device = alcOpenDevice((ByteBuffer) null);
         if (device == NULL) {
@@ -100,7 +106,7 @@ public final class SoundFactory implements Runnable {
                 try {
                     player.tick();
                 } catch(Exception e) {
-                    this.game.getLogger().log(Level.SEVERE, "SoundPlayer failed to tick!", e);
+                    logger.log(Level.SEVERE, "SoundPlayer failed to tick!", e);
                 }
             }
         }

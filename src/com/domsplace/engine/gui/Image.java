@@ -15,6 +15,7 @@
  */
 package com.domsplace.engine.gui;
 
+import com.domsplace.engine.display.texture.Texture;
 import com.domsplace.engine.scene.GameObject;
 import com.domsplace.engine.scene.GameScene;
 
@@ -25,6 +26,12 @@ import com.domsplace.engine.scene.GameScene;
 public class Image extends GUIObject {
     //Instance
     private final GameObject go;
+    
+    public Image(GUI g, Texture t) {
+        this(g, new GameObject(g.getGameScene()));
+        go.texture = t;
+        go.resizeToTexture();
+    }
     
     public Image(GUI g, GameObject go) {
         super(g);

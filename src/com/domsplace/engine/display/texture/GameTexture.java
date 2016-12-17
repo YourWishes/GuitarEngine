@@ -47,7 +47,7 @@ public class GameTexture extends Texture {
         try {
             GameTexture t = getResourceTexture("resource/hud/no_texture.png", 1, 1);
             //t.smooth = false;
-            t.loadLater();
+            t.loadAndUploadLater();
             return t;
         } catch(Exception e) {
             DisplayManager.getInstance().getLogger().log(Level.SEVERE, "Failed to load default texture!", e);
@@ -143,5 +143,11 @@ public class GameTexture extends Texture {
         return new double[]{
             col, row
         };
+    }
+    
+    @Override
+    public void dispose() {
+        super.dispose();
+        RESOURCE_LOADED_TEXTURES.remove(this);
     }
 }

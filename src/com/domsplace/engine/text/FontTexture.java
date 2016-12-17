@@ -24,6 +24,7 @@ import org.lwjgl.stb.STBTTFontinfo;
 import static org.lwjgl.stb.STBTruetype.stbtt_BakeFontBitmap;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_ScaleForPixelHeight;
+import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
 /**
  *
@@ -35,33 +36,24 @@ public class FontTexture extends Texture {
     
     public static final FontTexture getResourceTexture(String font, int fontSize) throws Exception {
         for(FontTexture t : LOADED_FONTS) {
-            if(font.equals(t.font) && t.fontSize == fontSize) {
+            if(font.equals(t.font)) {
                 return t;
             }
         }
-        return new FontTexture(font, fontSize);
+        return new FontTexture(font);
     }
     
     private static FontTexture DEFAULT_FONT;
     public static final FontTexture getDefault() {
         if(DEFAULT_FONT instanceof FontTexture) return DEFAULT_FONT;
         //We really need this loaded ASAP, so.. we're gonna be a bit cheeky here.
-        DEFAULT_FONT = new FontTexture("resource/font/Hind-Regular.ttf", 24);
+        DEFAULT_FONT = new FontTexture("resource/font/DaysOne-Regular.ttf");
         //If this is the main thread we're going to force a load now.
-        if(Thread.currentThread().equals(DisplayManager.getInstance().getKnownMainThread())) {
-            try {
-                DEFAULT_FONT.load();
-                DEFAULT_FONT.uploadMainThread();
-            } catch(Exception e) {
-                DisplayManager.getInstance().getLogger().log(Level.SEVERE, "I tried naughty Font Loading and it went REAL bad.", e);
-            }
-        } else {
-            //Not the main thread? But ok we will play the waiting game.
-            DEFAULT_FONT.loadLater();
-            while(!DEFAULT_FONT.isUploaded()) {
-                //This may lock the game up
-                TimeUtilities.sleepThread(1);
-            }
+        try {
+            DEFAULT_FONT.load();
+            DEFAULT_FONT.upload();//This is now thread locking! YAY!
+        } catch(Exception e) {
+            DisplayManager.getInstance().getLogger().log(Level.SEVERE, "I tried naughty Font Loading and it went REAL bad.", e);
         }
         
         return DEFAULT_FONT;
@@ -69,7 +61,6 @@ public class FontTexture extends Texture {
     
     //Instance
     private final String font;
-    private final int fontSize;
     private final int glyphStart;
     
     private STBTTBakedChar.Buffer cdata;
@@ -77,21 +68,20 @@ public class FontTexture extends Texture {
     private GlyphInfo[] glyphs;
     private float fontSizeScale;
     
-    public FontTexture(String font, int fontSize) {
-        this(font,fontSize,2048,2048);
+    public FontTexture(String font) {
+        this(font,4192,4192);
     }
     
-    public FontTexture(String font, int fontSize, int tWidth, int tHeight) {
-        this(font,fontSize,tWidth,tHeight,32);
+    public FontTexture(String font, int tWidth, int tHeight) {
+        this(font,tWidth,tHeight,32);
     }
     
-    public FontTexture(String font, int fontSize, int tWidth, int tHeight, int glyphStart) {
+    public FontTexture(String font, int tWidth, int tHeight, int glyphStart) {
         super();
         textureType = GL_ALPHA;
         textureFilter = GL_LINEAR;
         
         this.font = font;
-        this.fontSize = fontSize;
         this.glyphStart = glyphStart;
         this.tWidth = tWidth;
         this.tHeight = tHeight;
@@ -102,8 +92,8 @@ public class FontTexture extends Texture {
     }
     
     public int getGlyphStart() {return this.glyphStart;}
-    public int getFontSize() {return fontSize;}
     public STBTTBakedChar.Buffer getCharacterData() {return this.cdata;}
+    public int getFontSize() {return 96;}
     
     public float getWidth(String text) {
         //I have a feeling this is not returning an accurate number, but I don't know what will to be honest, it's pretty close.
@@ -142,10 +132,11 @@ public class FontTexture extends Texture {
 
         //Load our Bitmap Data
         ByteBuffer bitmap = BufferUtils.createByteBuffer(getWidth() * getHeight());
-        stbtt_BakeFontBitmap(ttf, this.getFontSize(), bitmap, getWidth(), getHeight(), glyphStart, cdata);
+        //512 is font size, helps to maintain a nice res
+        stbtt_BakeFontBitmap(ttf, getFontSize(), bitmap, getWidth(), getHeight(), glyphStart, cdata);
         
         //Setup our character data.
-        fontSizeScale = stbtt_ScaleForPixelHeight(fontInfo,this.getFontSize());
+        fontSizeScale = stbtt_ScaleForPixelHeight(fontInfo,getFontSize())*0.94f;
         
         for(int c = glyphStart; c < glyphStart+128; c++) {
             char ch = (char)c;

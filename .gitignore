@@ -10,3 +10,17 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+build/
+Hello World/
+nbproject/
+test/
+build.xml
+manifest.mf
+src/gameinfo.txt
+src/de
+src/lib
+src/resource
+src/com/domsplace/VisualNovel2016
+.gitignore
+/.gitignore
+/dist/

@@ -49,30 +49,30 @@ public class Label extends GUIObject {
         return (int)getFont().getWidth(getText());
     }
 
-    @Override
-    public int getHeight() {
-        return (int)this.text_object.height;
-    }
-    
-    public String getText() {
-        return this.text_object.getText();
-    }
+    @Override public int getHeight() {return (int)this.text_object.height;}
+    public String getText() {return this.text_object.getText();}
+    public int getFontSize() {return this.text_object.getFontSize();}
+    public Color getColor() {return this.text_object.color;}
+    public Color getOutlineColor() {return this.text_object.outlineColor;}
+    public int getOutlineThickness() {return this.text_object.outlineThickness;}
     
     public FontTexture getFont() {
         if(!(this.text_object.getFont() instanceof FontTexture)) return null;
         return (FontTexture)this.text_object.getFont();
     }
     
-    public Color getColor() {return this.text_object.color;}
+    public boolean isOutlined () {return this.text_object.outlined;}
     
     public String setText(String text) {
         this.text_object.setText(text);
         return "";//Needs to return string because of overridden classes.
     }
     
-    public void setFont(FontTexture text) {
-        this.text_object.setFont(text);
-    }
+    public void setFont(FontTexture text) {this.text_object.setFont(text);}
+    public void setFontSize(int size) {this.text_object.setFontSize(size);}
+    public void setOutlined(boolean b) {this.text_object.outlined = b;}
+    public void setOutlineThickness(int thickness) {this.text_object.outlineThickness = thickness;}
+    public void setOutlineColor(Color c) {this.text_object.outlineColor = c;}
     
     public void setColor(Color c) {this.text_object.color = c;}
     

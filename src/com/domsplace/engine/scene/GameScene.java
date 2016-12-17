@@ -19,7 +19,7 @@ import com.domsplace.engine.gui.GUI;
 import com.domsplace.engine.display.DisplayManager;
 import com.domsplace.engine.disposable.IDisposable;
 import com.domsplace.engine.game.Game;
-import com.domsplace.engine.gui.Scanlines;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -32,7 +32,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class GameScene implements IDisposable {
     public static GameScene ACTIVE_SCENE = null;
     public static GameScene getActiveScene() {
-        if(ACTIVE_SCENE.isDisposed()) return ACTIVE_SCENE = null;
+        if(ACTIVE_SCENE instanceof GameScene && ACTIVE_SCENE.isDisposed()) return ACTIVE_SCENE = null;
         return ACTIVE_SCENE;
     }
     public static void setActiveScene(GameScene scene) {
@@ -48,6 +48,7 @@ public class GameScene implements IDisposable {
     private final Game game;
     private final GUI gui;
     private final List<GameObject> objects;
+    private Color backgroundColor;
     public float x;
     public float y;
     private boolean disposed = false;
@@ -57,17 +58,20 @@ public class GameScene implements IDisposable {
     public GameScene(Game game) {
         this.game = game;
         this.objects = new ArrayList<GameObject>();
-        
         this.gui = new GUI(this);
+        this.backgroundColor = Color.WHITE;
     }
 
-    public List<GameObject> getGameObjects() {return new ArrayList<GameObject>(this.objects);}
-    public int getWidth() {return DisplayManager.getInstance().getWindow().getWidth();}
-    public int getHeight() {return DisplayManager.getInstance().getWindow().getHeight();}
     public final GUI getGUI() {return this.gui;}
     public final Game getGame() {return this.game;}
+    public final List<GameObject> getGameObjects() {return new ArrayList<GameObject>(this.objects);}
+    public final int getWidth() {return DisplayManager.getInstance().getWidth();}
+    public final int getHeight() {return DisplayManager.getInstance().getHeight();}
+    public final Color getBackgroundColor(){return this.backgroundColor;}
     
     @Override public final boolean isDisposed() {return this.disposed;}
+    
+    public final void setBackgroundColor(Color c) {this.backgroundColor = c;}
 
     public void addGameObject(GameObject object) {
         this.objects.add(object);
@@ -124,7 +128,9 @@ public class GameScene implements IDisposable {
         for(GameObject go : this.getGameObjects()) {
             go.dispose();
         }
-        
+        if(this.equals(GameScene.ACTIVE_SCENE)) {
+            GameScene.ACTIVE_SCENE = null;
+        }
         this.disposed = true;
     }
 }

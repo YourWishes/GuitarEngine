@@ -15,6 +15,7 @@
  */
 package com.domsplace.engine.sound;
 
+import com.domsplace.engine.disposable.IDisposable;
 import static com.domsplace.engine.sound.Sound.checkALError;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import static org.lwjgl.openal.AL11.AL_SEC_OFFSET;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public class SoundPlayer {
+public class SoundPlayer implements IDisposable {
 
     public static final int STATE_NULL = 0;
     public static final int STATE_PLAYING = 3;
@@ -54,6 +55,7 @@ public class SoundPlayer {
     private int source = -1;
     private boolean bound = false;
     private boolean please_dispose = false;
+    private boolean disposed;
 
     private float volume = 1.0f;
 
@@ -86,6 +88,9 @@ public class SoundPlayer {
     public boolean isPlaying() {
         return this.state == STATE_PLAYING;
     }
+    
+    @Override
+    public boolean isDisposed() {return disposed;}
 
     public void setVolume(float vol) {
         this.volume = vol;
@@ -122,11 +127,12 @@ public class SoundPlayer {
         this.bound = true;
     }
 
-    public void dispose() throws Exception {
+    @Override
+    public void dispose() {
         LOADED_PLAYERS.remove(this);
 
         alDeleteSources(source);
-        checkALError();
+        try {checkALError();}catch(Exception e) {SoundFactory.getFactory().getLogger().log(Level.SEVERE, "Failed to cleanup sound!", e);}
         source = -1;
 
         this.state = STATE_NULL;

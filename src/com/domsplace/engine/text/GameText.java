@@ -17,13 +17,10 @@ package com.domsplace.engine.text;
 
 import com.domsplace.engine.scene.GameObject;
 import com.domsplace.engine.scene.GameScene;
+import java.awt.Color;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.logging.Level;
-import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.stb.STBTTAlignedQuad;
-import org.lwjgl.stb.STBTTFontinfo;
 import static org.lwjgl.stb.STBTruetype.*;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -36,15 +33,21 @@ public class GameText extends GameObject {
     private String text = "Line 1111111111111111\nLine 2\nLine 3";
     
     //Instance
+    private int fontSize = 12;
+    
     public GameText(GameScene scene) {
         super(scene);
     }
     
     public FontTexture getFont() {return texture instanceof FontTexture ? (FontTexture)texture : null;}
     public String getText() {return text;}
+    public int getFontSize() {return fontSize;}
 
     public void setFont(FontTexture font) {this.texture = font;}
     public void setText(String text) {this.text = text;}
+    public void setFontSize(int fs) {this.fontSize = fs;}
+    
+    public final float getFontScale() {return fontSize * 0.055f;}
 
     @Override
     public void renderMesh() {
@@ -55,7 +58,7 @@ public class GameText extends GameObject {
             this.height = getFont().getFontSize();
             
             FloatBuffer x = stack.floats(0.0f);
-            FloatBuffer y = stack.floats((float)(this.height*0.75));
+            FloatBuffer y = stack.floats((float)(this.height*0.8f));
 
             STBTTAlignedQuad q = STBTTAlignedQuad.mallocStack(stack);
 
@@ -63,9 +66,9 @@ public class GameText extends GameObject {
             for (int i = 0; i < text.length(); i++) {
                 char c = text.charAt(i);
                 if (c == '\n') {
-                    this.height += getFont().getFontSize();
+                    this.height += getFont().getFontSize()*getFontScale();
                     
-                    y.put(0, y.get(0) + getFont().getFontSize());
+                    y.put(0, y.get(0) + getFont().getFontSize()*0.8f);
                     x.put(0, 0.0f);
                     continue;
                 } else if (c < getFont().getGlyphStart() || 128 <= c) {
@@ -85,9 +88,20 @@ public class GameText extends GameObject {
                 glTexCoord2f(q.s0(), q.t1());
                 glVertex2f(q.x0(), q.y1());
                 
-                this.width = Math.max(this.width, x.get(0));
+                this.width = Math.max(this.width, x.get(0)*getFontScale());
             }
             glEnd();
+            
+            this.width *= this.getFontScale();
+            this.height *= this.getFontScale();
         }
+    }
+    
+    @Override
+    public void render() {
+        glPushMatrix();
+        glScaled(this.getFontScale(),this.getFontScale(),1);
+        super.render();
+        glPopMatrix();
     }
 }

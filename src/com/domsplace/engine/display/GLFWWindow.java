@@ -103,6 +103,15 @@ public final class GLFWWindow {
     
     //Handle Update stuff (mostly event listeners)
     public void update() {
+        //Mouse State
+        for(int i = 0; i < 8; i++) {
+            //Refer to GLFW.GLFW_MOUSE_BUTTON_i (Where i is 1 > 8)
+            int result = glfwGetMouseButton(window_handle, i);
+            KeyManager.getInstance().handleMouse(i,result);
+        }
+        
+        
+        //Mouse Position
         DoubleBuffer x = BufferUtils.createDoubleBuffer(1);
         DoubleBuffer y = BufferUtils.createDoubleBuffer(1);
         glfwGetCursorPos(window_handle, x, y);

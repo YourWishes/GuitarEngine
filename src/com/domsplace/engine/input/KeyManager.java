@@ -28,9 +28,10 @@ import static org.lwjgl.glfw.GLFW.*;
  * @author Dominic Masters <dominic@domsplace.com>
  */
 public final class KeyManager {
+    //Satics
     private static final Map<Integer, List<Integer>> KEY_BINDINGS = new HashMap<Integer, List<Integer>>();
     
-    public static final int BINDING_EXAMPLE = 0;
+    public static final int BINDING_EXAMPLE = 0;//Do not remove, but do not use either.
     public static final int BINDING_ACCEPT  = 1;
     
     private static final KeyManager INSTANCE = new KeyManager();
@@ -42,8 +43,10 @@ public final class KeyManager {
     
     private KeyManager() {
         this.addBinding(BINDING_EXAMPLE, GLFW.GLFW_KEY_BACKSPACE);
+        
         this.addBinding(BINDING_ACCEPT, GLFW.GLFW_KEY_SPACE);
         this.addBinding(BINDING_ACCEPT, GLFW.GLFW_KEY_E);
+        this.addBinding(BINDING_ACCEPT, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
     
     public List<Integer> getBindings(int BINDING) {
@@ -74,26 +77,36 @@ public final class KeyManager {
     public void handleKey(int key, int action) {
         GameScene gs = GameScene.getActiveScene();
         if(gs == null) return;
-        if(action == GLFW_RELEASE) {
-            KEY_DOWN_STATES.remove((Object)key);
+        if(action == GLFW_RELEASE && KEY_DOWN_STATES.contains((Integer)key)) {
+            KEY_DOWN_STATES.remove((Integer)key);
             for(KeyListener ks : this.getListeners()) {
                 if(!(ks instanceof KeyListener)) continue;
                 ks.onKeyRelease(this, key);
             }
         }
-        if(action == GLFW_PRESS) {
-            KEY_DOWN_STATES.add(key);
+        if(action == GLFW_PRESS && !KEY_DOWN_STATES.contains((Integer)key)) {
+            KEY_DOWN_STATES.add((Integer)key);
             for(KeyListener ks : this.getListeners()) {
                 if(!(ks instanceof KeyListener)) continue;
                 ks.onKeyPress(this, key);
             }
-        }
-        if(action == GLFW_REPEAT) {
+        } else if(action == GLFW_PRESS || action == GLFW_REPEAT) {
             for(KeyListener ks : this.getListeners()) {
                 if(!(ks instanceof KeyListener)) continue;
                 ks.onKeyRepeat(this, key);
             }
         }
+    }
+    
+    public void handleMouse(int mouse, int action) {
+        /* 
+            At the time of writing this (December 2016) Mouse and Key indexes do
+            not collide so we can use the same impl for them both.
+        
+            If they do in the future a more complicated set of key bindings for
+            mouse actions will need to be written.
+        */
+        this.handleKey(mouse, action);
     }
     
     public void update() {

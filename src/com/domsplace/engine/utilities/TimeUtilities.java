@@ -29,15 +29,11 @@ public class TimeUtilities {
     }
     
     public static void sleepThread(long milliseconds) {
-        sleepThreadNS(millisecondsToNanoseconds(milliseconds));
-    }
-    
-    public static void sleepThreadNS(long ns) {
-        long start_in_nanoseconds = System.nanoTime();
-        while(true) {
-            long now = System.nanoTime();
-            if(now-start_in_nanoseconds < ns) continue;
-            break;
+        try {
+            Thread.sleep(milliseconds);
+        } catch(Exception e) {
+            e.printStackTrace();
         }
+        //sleepThreadNS(millisecondsToNanoseconds(milliseconds));
     }
 }
