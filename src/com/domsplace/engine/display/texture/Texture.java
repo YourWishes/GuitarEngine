@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.logging.Level;
 import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
 import static org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT;
-import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -64,10 +63,8 @@ public class Texture implements Runnable, IDisposable {
     protected ByteBuffer buff;
     private boolean disposed = false;
     
-    protected int textureType = GL_RGBA;
-    protected int textureFilter = GL_LINEAR_MIPMAP_LINEAR ;
-    
-    public boolean smooth = true;
+    public int textureType = GL_RGBA;
+    public int textureFilter = GL_LINEAR_MIPMAP_LINEAR ;
     
     //Threading rules
     private boolean reqLoadLater = false;
@@ -156,7 +153,9 @@ public class Texture implements Runnable, IDisposable {
             if(Texture.TEXTURES_TO_UPLOAD.contains(this)) return;
             if(this.handle != -1) return;
             Texture.TEXTURES_TO_UPLOAD.add(this);
-            while(!this.isUploaded()) {TimeUtilities.sleepThread(1);}
+            while(!DisplayManager.getInstance().isDisposed() && !this.isUploaded()) {
+                TimeUtilities.sleepThread(1);
+            }
         }
     }
 
@@ -170,7 +169,7 @@ public class Texture implements Runnable, IDisposable {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureFilter);
-        if(f > 0) glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, f);
+        if(f > 0 && textureFilter != GL_NEAREST) glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, f);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

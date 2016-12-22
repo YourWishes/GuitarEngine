@@ -52,7 +52,11 @@ public class FileUtilities {
     }
 
     public static String getResourceAsString(String resource) throws IOException {
-        return getInputStreamAsString(getResource(resource));
+        InputStream is = getResource(resource);
+        String s = getInputStreamAsString(is);
+        is.close();
+        OPEN_STREAMS.remove(is);
+        return s;
     }
 
     public static String getInputStreamAsString(InputStream is) throws IOException {

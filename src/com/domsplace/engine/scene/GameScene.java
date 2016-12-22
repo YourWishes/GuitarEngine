@@ -36,6 +36,9 @@ public class GameScene implements IDisposable {
         return ACTIVE_SCENE;
     }
     public static void setActiveScene(GameScene scene) {
+        if(DisplayManager.getInstance().isDisposed()) {scene.dispose();}
+        if(scene.isDisposed()) return;
+        
         if(ACTIVE_SCENE instanceof GameScene) {
             for(GameObject go : ACTIVE_SCENE.getGameObjects()) {
                 go.onSceneChange(scene);
@@ -125,6 +128,7 @@ public class GameScene implements IDisposable {
     
     @Override
     public void dispose() {
+        if(this.isDisposed()) return;
         for(GameObject go : this.getGameObjects()) {
             go.dispose();
         }

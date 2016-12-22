@@ -28,12 +28,14 @@ public class TimeUtilities {
         return (double)x / 1000000d;
     }
     
-    public static void sleepThread(long milliseconds) {
+    public static boolean sleepThread(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch(Exception e) {
             e.printStackTrace();
+            return true;
         }
+        return false;
         //sleepThreadNS(millisecondsToNanoseconds(milliseconds));
     }
 }

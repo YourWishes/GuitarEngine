@@ -61,6 +61,8 @@ public final class DisplayManager {
     private int sceneBufferCRID;//ColorBuffer ID
     private int sceneBufferDPID;//DepthBuffer ID
     
+    private boolean disposed = false;
+    
     private DisplayManager() {
         this.logger = Logger.getLogger(this.getClass().getName());
     }
@@ -71,6 +73,8 @@ public final class DisplayManager {
     
     public int getWidth() {return this.width;}
     public int getHeight() {return this.height;}
+    
+    public boolean isDisposed() {return disposed;}
     
     public void setup(Game game) throws Exception {
         if(!Thread.currentThread().equals(game.getMainThread())) throw new Exception("This is not the main thread, cannot setup.");
@@ -249,6 +253,7 @@ public final class DisplayManager {
     
     public void dispose(Game game) throws Exception {
         if(!Thread.currentThread().equals(game.getMainThread())) throw new Exception("This is not the main thread, cannot stop.");
+        this.disposed = true;
         
         if(this.window instanceof GLFWWindow) this.window.dispose();
         

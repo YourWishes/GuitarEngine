@@ -132,14 +132,21 @@ public class GameObject implements IDisposable {
                 }
             }
         }
-
+        
+        //Render
         ShaderProgram.getDefaultShader().bind();
         this.setTextureToShader();
         float[] colors = ColorUtilities.getColorAdjust(this.color);
         glColor4f(colors[0], colors[1], colors[2], alpha);
         this.renderMesh();
+        
+        //Render Children
+        this.renderChildren();
+        
         glPopMatrix();
     }
+    
+    public void renderChildren(){}
 
     public void renderMesh() {
         double s = this.s;
