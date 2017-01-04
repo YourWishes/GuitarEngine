@@ -36,23 +36,20 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  *
  * @author Dominic Masters <dominic@domsplace.com>
  */
-public final class SoundFactory implements Runnable {
+public final class SoundFactory {
     private static final SoundFactory INSTANCE = new SoundFactory();
 
     public static SoundFactory getFactory() {
         return INSTANCE;
     }
     
-    
     //Instance
-    private final Thread thread;
     private final Logger logger;
     private long device = -1;
     private long context;
     private Game game;
     
     private SoundFactory() {
-        this.thread = new Thread(this);
         this.logger = Logger.getLogger(SoundFactory.class.getName());
     }
     
@@ -62,7 +59,7 @@ public final class SoundFactory implements Runnable {
         return this.device != -1 && this.game instanceof Game;
     }
     
-    private void setup(Game game) {
+    public void setup(Game game) {
         if(this.isSetup()) {
             return;
         }
@@ -86,28 +83,19 @@ public final class SoundFactory implements Runnable {
         alcCloseDevice(device);
     }
     
-    public void start(Game game) {
-        this.setup(game);
-        this.thread.start();
-    }
-    
     public void stop() throws Exception {
         SoundPlayer.cleanup();
-        this.thread.interrupt();
         this.destroyAL();
     }
     
-    @Override
-    public void run() {
-        while(!this.thread.isInterrupted()) {
-            List<SoundPlayer> players = SoundPlayer.getAllPlayers();
-            for(SoundPlayer player : players) {
-                if(player == null) continue;
-                try {
-                    player.tick();
-                } catch(Exception e) {
-                    logger.log(Level.SEVERE, "SoundPlayer failed to tick!", e);
-                }
+    public void update(Game game) throws Exception {
+        List<SoundPlayer> players = SoundPlayer.getAllPlayers();
+        for(SoundPlayer player : players) {
+            if(player == null) continue;
+            try {
+                player.tick();
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "SoundPlayer failed to tick!", e);
             }
         }
     }

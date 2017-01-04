@@ -30,7 +30,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.lwjgl.BufferUtils;
 
 /**
@@ -203,5 +205,34 @@ public class FileUtilities {
         buffer.flip();
         newBuffer.put(buffer);
         return newBuffer;
+    }
+    
+    public static Map<String,String> parseINI(String data) throws IOException {
+        return parseINI(data, new HashMap<String,String>());
+    }
+    
+    public static Map<String,String> parseINI(String string_data, Map<String,String> defaults) throws IOException {
+        String[] lines = string_data.split("\n");
+        Map<String,String> data = defaults;//Stores our temporary values.
+        for(int i = 0; i < lines.length; i++) {
+            //Check empty string
+            String line = lines[i];
+            if(line.length() == 0 || line.replaceAll(" ", "").length() == 0) continue;
+            //Line should be ok, ensure there is a "Value" and a "Property", the first = is the seperator
+            String[] pairs = line.split("=");
+            //Make sure there is a at least a key and a value
+            if(pairs.length < 2) throw new IOException("Line " + (i+1) + " doesn't have a correct value/key pair!");
+            //Should be ok, the length MAY be greater than 2 but unlikely.
+            String key = pairs[0];
+            String value = "";
+            for(int j = 1; j < pairs.length; j++) {
+                value += pairs[j];//
+                if(j < (pairs.length-1)) value += "=";//Just reattaches = seperated values
+            }
+            //Now we can push our data.
+            data.remove(key);//Remove previous entries... sorta needed for defaults.
+            data.put(key, value);//Add our entry.
+        }
+        return data;
     }
 }

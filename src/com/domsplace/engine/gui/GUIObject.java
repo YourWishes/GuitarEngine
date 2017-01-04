@@ -97,13 +97,15 @@ public abstract class GUIObject implements IDisposable {
     
     @Override
     public void dispose() {
+        if(isDisposed()) return;
         this.disposed = true;
-        this.getGUI().remove(this);
+        if(this.getGUI() instanceof GUI) this.getGUI().remove(this);
         if(this.parent instanceof GUIObject) {
             this.parent.remove(this);
         }
         for(GUIObject go : this.getChildren()) {
             go.remove(this);
+            go.dispose();
         }
     }
 }

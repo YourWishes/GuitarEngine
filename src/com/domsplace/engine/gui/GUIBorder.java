@@ -15,7 +15,7 @@
  */
 package com.domsplace.engine.gui;
 
-import com.domsplace.engine.scene.GameObject;
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.scene.GameScene;
 import java.util.ArrayList;
 import java.util.List;

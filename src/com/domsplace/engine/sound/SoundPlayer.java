@@ -29,11 +29,12 @@ import static org.lwjgl.openal.AL11.AL_SEC_OFFSET;
  * @author Dominic Masters <dominic@domsplace.com>
  */
 public class SoundPlayer implements IDisposable {
-
-    public static final int STATE_NULL = 0;
-    public static final int STATE_PLAYING = 3;
-    public static final int STATE_PAUSED = 4;
-    public static final int STATE_FINISHED_PLAYING = 5;
+    public enum PlayingState {
+        NULL,
+        PLAYING,
+        PAUSED,
+        FINISHED_PLAYING
+    }
 
     public static float MASTER_VOLUME = 0.1f;
 
@@ -59,7 +60,7 @@ public class SoundPlayer implements IDisposable {
 
     private float volume = 1.0f;
 
-    private int state = STATE_NULL;
+    private PlayingState state = PlayingState.NULL;
 
     public SoundPlayer(final Sound sound) {
         this.sound = sound;
@@ -73,7 +74,7 @@ public class SoundPlayer implements IDisposable {
         return AL10.alGetSourcef(source, AL_SEC_OFFSET);
     }
 
-    public int getState() {
+    public PlayingState getState() {
         return this.state;
     }
 
@@ -86,7 +87,7 @@ public class SoundPlayer implements IDisposable {
     }
 
     public boolean isPlaying() {
-        return this.state == STATE_PLAYING;
+        return PlayingState.PLAYING.equals(this.state);
     }
     
     @Override
@@ -135,7 +136,7 @@ public class SoundPlayer implements IDisposable {
         try {checkALError();}catch(Exception e) {SoundFactory.getFactory().getLogger().log(Level.SEVERE, "Failed to cleanup sound!", e);}
         source = -1;
 
-        this.state = STATE_NULL;
+        this.state = PlayingState.NULL;
     }
 
     public void play() throws Exception {
@@ -146,21 +147,21 @@ public class SoundPlayer implements IDisposable {
         alSourcePlay(source);
         this.updateVolume();
         checkALError();
-        this.state = STATE_PLAYING;
+        this.state = PlayingState.PLAYING;
     }
 
-    private int last_state;
+    private PlayingState last_state;
     private float last_pos = 0f;
 
     public void tick() throws Exception {
         float pos = this.getPosition();
         float duration = this.getSound().getDuration();
-        int state = this.getState();
+        PlayingState state = this.getState();
 
-        if (this.isPlaying()) {
+        if(this.isPlaying()) {
             if (last_pos > 0 && pos == 0) {
                 this.finish();
-                this.state = STATE_FINISHED_PLAYING;
+                this.state = PlayingState.FINISHED_PLAYING;
             }
         }
 

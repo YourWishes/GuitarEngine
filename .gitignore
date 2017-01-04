@@ -16,11 +16,12 @@ nbproject/
 test/
 build.xml
 manifest.mf
-src/gameinfo.txt
+src/*.txt
 src/de
 src/lib
 src/resource
 src/com/domsplace/VisualNovel2016
+src/com/domsplace/UntitledVN
 .gitignore
 /.gitignore
 /dist/

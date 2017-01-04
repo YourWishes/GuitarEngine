@@ -16,7 +16,7 @@
 package com.domsplace.engine.gui;
 
 import com.domsplace.engine.display.texture.Texture;
-import com.domsplace.engine.scene.GameObject;
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.scene.GameScene;
 
 /**

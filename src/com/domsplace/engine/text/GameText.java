@@ -15,7 +15,7 @@
  */
 package com.domsplace.engine.text;
 
-import com.domsplace.engine.scene.GameObject;
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.scene.GameScene;
 import java.awt.Color;
 import java.nio.FloatBuffer;

@@ -29,6 +29,7 @@ public final class GameInfo {
     public Map<String,String> getData() {return new HashMap<String,String>(data);}
     
     public String getValue(String key) {return this.data.get(key);}
+    public Class getClassByKey(String key) throws ClassNotFoundException {return Class.forName(getValue(key));}
     
     public void setValue(String key, String value) {
         this.data.remove(key);
@@ -67,30 +68,6 @@ public final class GameInfo {
         //Alternative would be to read char by char and look for \n and the seperator
         stream.close();//We're done with the stream now.
         
-        //Now we need to iterate over our string, line by line
-        String[] lines = file_data.split("\n");
-        Map<String,String> data = this.getDefaults();//Stores our temporary values.
-        for(int i = 0; i < lines.length; i++) {
-            //Check empty string
-            String line = lines[i];
-            if(line.length() == 0 || line.replaceAll(" ", "").length() == 0) continue;
-            //Line should be ok, ensure there is a "Value" and a "Property", the first = is the seperator
-            String[] pairs = line.split("=");
-            //Make sure there is a at least a key and a value
-            if(pairs.length < 2) throw new IOException("Line " + (i+1) + " doesn't have a correct value/key pair!");
-            //Should be ok, the length MAY be greater than 2 but unlikely.
-            String key = pairs[0];
-            String value = "";
-            for(int j = 1; j < pairs.length; j++) {
-                value += pairs[j];//
-                if(j < (pairs.length-1)) value += "=";//Just reattaches = seperated values
-            }
-            //Now we can push our data.
-            data.remove(key);//Remove previous entries... sorta needed for defaults.
-            data.put(key, value);//Add our entry.
-        }
-        
-        //Now our data is valid, we can store this.
-        this.data = data;
+        this.data = FileUtilities.parseINI(file_data,this.getDefaults());
     }
 }

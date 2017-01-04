@@ -25,6 +25,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * @author Dominic Masters <dominic@domsplace.com>
  */
 public final class GLFWWindow {
+    private String title;
     private int width;
     private int height;
     private final long window_handle;
@@ -46,6 +47,7 @@ public final class GLFWWindow {
     }
     
     public GLFWWindow(int width, int height, String title, boolean fullscreen, long monitor) throws Exception {
+        this.title = title;
         this.width = width;
         this.height = height;
         
@@ -75,6 +77,7 @@ public final class GLFWWindow {
         }));
     }
     
+    public String getTitle() {return title;}
     public long getWindowHandle() {return window_handle;}
     public long getMonitor() {return glfwGetWindowMonitor(this.window_handle);}
     public int getWidth() {return width;}
@@ -84,6 +87,11 @@ public final class GLFWWindow {
     
     public void setPosition(int x, int y) {glfwSetWindowPos(this.window_handle,x,y);}
     public void setContextCurrent() {glfwMakeContextCurrent(window_handle);}//Basically "RENDER TO ME!"
+    public void setTitle(String title) {
+        this.title = title;
+        //I really have no idea if this is thread safe or not..
+        glfwSetWindowTitle(window_handle, title);
+    }
     
     public boolean isCloseRequested() {return glfwWindowShouldClose(window_handle);}
     

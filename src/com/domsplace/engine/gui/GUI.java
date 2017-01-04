@@ -18,7 +18,7 @@ package com.domsplace.engine.gui;
 import com.domsplace.engine.display.DisplayManager;
 import com.domsplace.engine.display.texture.GameTexture;
 import com.domsplace.engine.game.Game;
-import com.domsplace.engine.scene.GameObject;
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.scene.GameScene;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,8 +54,6 @@ public class GUI extends GUIFrame {
     
     public final GameScene getGameScene() {return this.s;}
     public final Game getGame() {return s.getGame();}
-    public final double getMouseX() {return DisplayManager.getInstance().getWindow().getMouseX();}
-    public final double getMouseY() {return DisplayManager.getInstance().getWindow().getMouseY();}
     
     public GUIObject getObjectAt(double x, double y) {
         List<GUIObject> objs = this.getObjectsAt(x, y);
@@ -75,7 +73,15 @@ public class GUI extends GUIFrame {
         
         for(GUIObject o : this.getChildren()) {
             if(!(o instanceof GUIObject)) continue;
-            if(x < o.x || y < o.y || x > o.x+o.getWidth() || y > o.y+o.getHeight()) continue;
+            double ox = o.x;
+            double oy = o.y;
+            GUIObject parent = o.getParent();
+            while(parent instanceof GUIObject) {
+                ox += parent.x;
+                oy += parent.y;
+                parent = parent.getParent();
+            }
+            if(x < ox || y < oy || x > ox+o.getWidth() || y > oy+o.getHeight()) continue;
             objs.add(o);
         }
         

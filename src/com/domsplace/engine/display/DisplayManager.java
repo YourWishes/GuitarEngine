@@ -167,11 +167,7 @@ public final class DisplayManager {
         
         while(!window.isCloseRequested()) {
             try {
-                //We need to update our KeyManager as well.
-                KeyManager.getInstance().update();
-                
-                //Do the render
-                this.update(game);
+                game.run();
             } catch(Exception e) {
                 logger.log(Level.SEVERE, "Failed to render!", e);
             }
@@ -184,8 +180,15 @@ public final class DisplayManager {
         this.window.update();
         GameScene scene = GameScene.getActiveScene();
         Color c = Color.white;
+        String title = game.getName();
+        
         if(scene instanceof GameScene) {
             c = scene.getBackgroundColor();
+            title = scene.getTitle() instanceof String ? title + " - " + scene.getTitle() : title;
+        }
+        
+        if(!title.equals(window.getTitle())) {
+            window.setTitle(title);
         }
         
         //Upload all pending textures.

@@ -15,6 +15,7 @@
  */
 package com.domsplace.engine.scene;
 
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.gui.GUI;
 import com.domsplace.engine.display.DisplayManager;
 import com.domsplace.engine.disposable.IDisposable;
@@ -55,6 +56,7 @@ public class GameScene implements IDisposable {
     public float x;
     public float y;
     private boolean disposed = false;
+    private String title = null;
     
     public long last_frame = -1;
 
@@ -71,10 +73,22 @@ public class GameScene implements IDisposable {
     public final int getWidth() {return DisplayManager.getInstance().getWidth();}
     public final int getHeight() {return DisplayManager.getInstance().getHeight();}
     public final Color getBackgroundColor(){return this.backgroundColor;}
+    public final String getTitle() {return title;}
+    
+    //Mouse Coordinates are in Window Space, they need to be in Scene space
+    public final double getMouseX() {
+        double mpc = DisplayManager.getInstance().getWindow().getMouseX()/(double)DisplayManager.getInstance().getWindow().getWidth();
+        return ((double)getWidth())*mpc;
+    }
+    public final double getMouseY() {
+        double mpc = DisplayManager.getInstance().getWindow().getMouseY()/(double)DisplayManager.getInstance().getWindow().getHeight();
+        return ((double)getHeight())*mpc;
+    }
     
     @Override public final boolean isDisposed() {return this.disposed;}
     
     public final void setBackgroundColor(Color c) {this.backgroundColor = c;}
+    public final void setTitle(String title) {this.title = title;}
 
     public void addGameObject(GameObject object) {
         this.objects.add(object);
@@ -129,6 +143,7 @@ public class GameScene implements IDisposable {
     @Override
     public void dispose() {
         if(this.isDisposed()) return;
+        this.gui.dispose();
         for(GameObject go : this.getGameObjects()) {
             go.dispose();
         }

@@ -17,7 +17,7 @@ package com.domsplace.engine.gui;
 
 import com.domsplace.engine.display.DisplayManager;
 import com.domsplace.engine.display.texture.GameTexture;
-import com.domsplace.engine.scene.GameObject;
+import com.domsplace.engine.scene.gameobject.GameObject;
 import com.domsplace.engine.scene.GameScene;
 import java.util.logging.Level;
 

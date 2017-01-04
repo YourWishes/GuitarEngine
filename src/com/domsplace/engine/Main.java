@@ -78,7 +78,7 @@ public class Main {
             //Sets the graphics up, doesn't actually do anything with them though
             DisplayManager.getInstance().setup(game);//Confirms LWJGL's availability, creates our stuff but nothing is displayed.
             //Sets the sound up, again doesn't do much but Sound tends to happen asynchronously.
-            SoundFactory.getFactory().start(game);
+            SoundFactory.getFactory().setup(game);
         } catch(Exception e) {
             mainLogger.log(Level.SEVERE, "Failed to setup game.");
         }

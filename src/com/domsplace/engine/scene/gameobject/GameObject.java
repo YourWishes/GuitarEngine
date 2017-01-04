@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.domsplace.engine.scene;
+package com.domsplace.engine.scene.gameobject;
 
 import com.domsplace.engine.display.shader.ShaderProgram;
 import com.domsplace.engine.display.texture.GameTexture;
 import com.domsplace.engine.display.texture.Texture;
 import com.domsplace.engine.disposable.IDisposable;
+import com.domsplace.engine.scene.GameScene;
 import com.domsplace.engine.utilities.ColorUtilities;
 import java.awt.Color;
 import static org.lwjgl.opengl.GL11.*;

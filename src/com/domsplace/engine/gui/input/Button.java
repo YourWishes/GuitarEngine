@@ -29,9 +29,10 @@ public abstract class Button extends GUIObject implements KeyListener {
     
     @Override
     public void render(GameScene scene, double frame_took) {
+        if(!getGUI().getGameScene().equals(GameScene.getActiveScene())) return;
         //Check the position of the cursor in SCREEN space
-        double mouseX = getGUI().getMouseX();
-        double mouseY = getGUI().getMouseY();
+        double mouseX = getGUI().getGameScene().getMouseX();
+        double mouseY = getGUI().getGameScene().getMouseY();
         
         if(!isInsideButton(mouseX,mouseY)) {
             //Outside the box.
@@ -67,10 +68,11 @@ public abstract class Button extends GUIObject implements KeyListener {
 
     @Override
     public void onKeyPress(KeyManager manager, int KEY) {
+        if(!getGUI().getGameScene().equals(GameScene.getActiveScene())) return;
         if(manager.isBound(BINDING_ACCEPT, KEY)) {
             //First check if the mouse is within our bounds
-            double mouseX = getGUI().getMouseX();
-            double mouseY = getGUI().getMouseY();
+            double mouseX = getGUI().getGameScene().getMouseX();
+            double mouseY = getGUI().getGameScene().getMouseY();
 
             if(isInsideButton(mouseX,mouseY)) {
                 this.onPress();
@@ -81,11 +83,12 @@ public abstract class Button extends GUIObject implements KeyListener {
 
     @Override
     public void onKeyRelease(KeyManager manager, int KEY) {
+        if(!getGUI().getGameScene().equals(GameScene.getActiveScene())) return;
         if(manager.isBound(BINDING_ACCEPT, KEY) && pressedOnMe) {
             pressedOnMe = false;
             //First check if the mouse is within our bounds
-            double mouseX = getGUI().getMouseX();
-            double mouseY = getGUI().getMouseY();
+            double mouseX = getGUI().getGameScene().getMouseX();
+            double mouseY = getGUI().getGameScene().getMouseY();
 
             if(isInsideButton(mouseX,mouseY)) {
                 this.onRelease();
@@ -97,10 +100,11 @@ public abstract class Button extends GUIObject implements KeyListener {
 
     @Override
     public void onKeyRepeat(KeyManager manager, int KEY) {
+        if(!getGUI().getGameScene().equals(GameScene.getActiveScene())) return;
         if(manager.isBound(BINDING_ACCEPT, KEY)) {
             //First check if the mouse is within our bounds
-            double mouseX = getGUI().getMouseX();
-            double mouseY = getGUI().getMouseY();
+            double mouseX = getGUI().getGameScene().getMouseX();
+            double mouseY = getGUI().getGameScene().getMouseY();
 
             if(isInsideButton(mouseX,mouseY)) {
                 this.onMouseDown();
@@ -115,7 +119,7 @@ public abstract class Button extends GUIObject implements KeyListener {
     
     @Override
     public void dispose() {
-        super.dispose();
         KeyManager.getInstance().removeListener(this);
+        super.dispose();
     }
 }

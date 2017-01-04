@@ -7,7 +7,10 @@
  */
 package com.domsplace.engine.game;
 
+import com.domsplace.engine.display.DisplayManager;
+import com.domsplace.engine.input.KeyManager;
 import com.domsplace.engine.scene.GameScene;
+import com.domsplace.engine.sound.SoundFactory;
 import com.domsplace.engine.utilities.FileUtilities;
 import com.domsplace.engine.utilities.ReflectionUtilities;
 import java.io.File;
@@ -140,5 +143,16 @@ public abstract class Game {
         for(String s : files) {
             ReflectionUtilities.loadJAR(new File(lib_dir, s));
         }
+    }
+    
+    public void run() throws Exception {
+        //We need to update our KeyManager as well.
+        KeyManager.getInstance().update();
+
+        //Do the render
+        DisplayManager.getInstance().update(this);
+        
+        //Now do sounds
+        SoundFactory.getFactory().update(this);
     }
 }
